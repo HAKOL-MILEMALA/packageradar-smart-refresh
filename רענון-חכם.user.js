@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PackageRadar - רענון חכם
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.4
 // @description  הוספת סקריפט רענון חכם עבור PackageRadar
 // @author       HAKOL-MILEMALA
 // @match        https://packageradar.com/tracks
