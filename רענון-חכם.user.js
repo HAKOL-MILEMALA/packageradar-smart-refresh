@@ -1,10 +1,12 @@
 // ==UserScript==
 // @name         PackageRadar - רענון חכם
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.3
 // @description  הוספת סקריפט רענון חכם עבור PackageRadar
 // @author       HAKOL-MILEMALA
 // @match        https://packageradar.com/tracks
+// @updateURL    https://github.com/HAKOL-MILEMALA/packageradar-smart-refresh/raw/refs/heads/main/%D7%A8%D7%A2%D7%A0%D7%95%D7%9F-%D7%97%D7%9B%D7%9D.user.js
+// @downloadURL  https://github.com/HAKOL-MILEMALA/packageradar-smart-refresh/raw/refs/heads/main/%D7%A8%D7%A2%D7%A0%D7%95%D7%9F-%D7%97%D7%9B%D7%9D.user.js
 // @grant        none
 // ==/UserScript==
 
@@ -86,10 +88,11 @@
         console.log(`%c${prefix} 1️⃣ 🔗 ניגש לדף החבילה וטוען נתונים...`, "color: #007bff; font-weight: bold;");
 
         try {
+            // ממתינים לטעינת דף החבילה עצמו (זה הכרחי כדי לחלץ את קישור הרענון)
             let response = await fetch(packageUrl);
 
             if (response.status === 429) {
-                console.log(`%c${prefix} ⛔ נחסם! השרת מתלונן על עומס בקשות (429).`, "color: red; font-weight: bold;");
+                console.log(`%c${prefix} ⛔ נחסם! השרת מתלונן על עומס בקשות לדפים (429).`, "color: red; font-weight: bold;");
                 return false;
             }
             if (!response.ok) {
@@ -105,51 +108,54 @@
             let refreshBtn = doc.querySelector('a[data-url*="/refresh"]');
 
             if (refreshBtn) {
-                console.log(`%c${prefix} 3️⃣ 🎯 מעולה! כפתור רענון אותר. שולח בקשה...`, "color: #fd7e14; font-weight: bold;");
+                console.log(`%c${prefix} 3️⃣ 🎯 מעולה! כפתור רענון אותר. משגר בקשת רענון ברקע וממשיך...`, "color: #fd7e14; font-weight: bold;");
                 let refreshUrl = refreshBtn.getAttribute('data-url');
 
-                let apiResponse = await fetch(refreshUrl, {
+                // --- השינוי כאן: שולחים את הבקשה אבל *לא* עושים לה await! ---
+                // פעולת הרענון מתבצעת ברקע, והסקריפט מדלג מיד הלאה.
+                fetch(refreshUrl, {
                     headers: {'X-Requested-With': 'XMLHttpRequest'}
+                }).then(async (apiResponse) => {
+                    if (apiResponse.ok) {
+                        console.log(`%c${prefix} 4️⃣ 📡 [ברקע] התקבלה תשובה מהשרת, מפענח...`, "color: #20c997;");
+                        let json = await apiResponse.json();
+                        let rawHtml = json.html || "";
+                        let cleanMsg = extractTextFromHtml(rawHtml);
+                        if (!cleanMsg) cleanMsg = json.message || json.msg || "בוצע";
+
+                        // ניתוח התשובה הסופית
+                        let statusIcon = "❓";
+                        let statusHebrew = "תשובה לא מזוהה:";
+                        let logColor = "color: black;";
+
+                        let lowerMsg = cleanMsg.toLowerCase();
+                        if (lowerMsg.includes('unavailable') || lowerMsg.includes('6 hours') || lowerMsg.includes('wait')) {
+                            statusIcon = "⏳";
+                            statusHebrew = "לא ניתן לרענן (יש להמתין)";
+                            logColor = "color: #d9534f; font-weight: bold; background: #fdf2f2; padding: 2px;"; // אדום-חלש
+                        }
+                        else if (lowerMsg.includes('success') || lowerMsg.includes('עודכן') || lowerMsg.includes('ok') || lowerMsg.includes('בוצע')) {
+                            statusIcon = "✅";
+                            statusHebrew = "עודכן בהצלחה!";
+                            logColor = "color: #28a745; font-weight: bold; background: #e8f5e9; padding: 2px;"; // ירוק
+                        }
+
+                        console.log(`%c${prefix} 5️⃣ [ברקע] ${statusIcon} ${statusHebrew} => "${cleanMsg}"`, logColor);
+                    } else if (apiResponse.status === 429) {
+                         console.log(`%c${prefix} ❌ [ברקע] בקשת הרענון נחסמה בגלל עומס (429).`, "color: red; font-weight: bold;");
+                    }
+                }).catch(e => {
+                    console.error(`💥 ${prefix} [ברקע] שגיאת רשת בשליחת הרענון:`, e);
                 });
 
-                if (apiResponse.ok) {
-                    console.log(`%c${prefix} 4️⃣ 📡 התקבלה תשובה מהשרת, מפענח...`, "color: #20c997;");
-                    let json = await apiResponse.json();
-                    let rawHtml = json.html || "";
-                    let cleanMsg = extractTextFromHtml(rawHtml);
-                    if (!cleanMsg) cleanMsg = json.message || json.msg || "בוצע";
-
-                    // ניתוח התשובה הסופית
-                    let statusIcon = "❓";
-                    let statusHebrew = "תשובה לא מזוהה:";
-                    let logColor = "color: black;";
-
-                    let lowerMsg = cleanMsg.toLowerCase();
-                    if (lowerMsg.includes('unavailable') || lowerMsg.includes('6 hours') || lowerMsg.includes('wait')) {
-                        statusIcon = "⏳";
-                        statusHebrew = "לא ניתן לרענן (יש להמתין)";
-                        logColor = "color: #d9534f; font-weight: bold; background: #fdf2f2; padding: 2px;"; // אדום-חלש
-                    }
-                    // התיקון כאן: הוספנו את 'בוצע' לרשימת ההצלחות!
-                    else if (lowerMsg.includes('success') || lowerMsg.includes('עודכן') || lowerMsg.includes('ok') || lowerMsg.includes('בוצע')) {
-                        statusIcon = "✅";
-                        statusHebrew = "עודכן בהצלחה!";
-                        logColor = "color: #28a745; font-weight: bold; background: #e8f5e9; padding: 2px;"; // ירוק
-                    }
-
-                    console.log(`%c${prefix} 5️⃣ ${statusIcon} ${statusHebrew} => "${cleanMsg}"`, logColor);
-                    return true;
-
-                } else if (apiResponse.status === 429) {
-                     console.log(`%c${prefix} ❌ בקשת הרענון נחסמה בגלל עומס (429).`, "color: red; font-weight: bold;");
-                     return false;
-                }
+                // מחזירים true מיד אחרי השיגור, כדי שהתור ירוץ מהר!
+                return true;
             } else {
                 console.log(`%c${prefix} 🛑 לא נמצא כפתור רענון. (כנראה לא עבר מספיק זמן מהבדיקה הקודמת).`, "color: #6c757d; font-style: italic;");
             }
             return false;
         } catch (e) {
-            console.error(`💥 ${prefix} שגיאת קוד/רשת לא צפויה:`, e);
+            console.error(`💥 ${prefix} שגיאת קוד/רשת לא צפויה בשלב טעינת הדף:`, e);
             return false;
         }
     }
@@ -161,7 +167,7 @@
         let uniqueLinks = [...new Set(links.map(a => a.href))];
 
         if (uniqueLinks.length === 0) {
-            alert("לא נמצאו חבילות סוראניות!");
+            alert("לא נמצאו חבילות סרוקות!");
             return;
         }
 
