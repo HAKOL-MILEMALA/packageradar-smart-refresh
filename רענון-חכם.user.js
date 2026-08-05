@@ -5,10 +5,11 @@
 // @description  הוספת סקריפט רענון חכם עבור PackageRadar
 // @author       HAKOL-MILEMALA
 // @match        https://packageradar.com/tracks
-// @updateURL    https://raw.githubusercontent.com/HAKOL-MILEMALA/packageradar-smart-refresh/main/%D7%A8%D7%A2%D7%A0%D7%95%D7%9F-%D7%97%D7%9B%D7%9D.user.js
-// @downloadURL  https://raw.githubusercontent.com/HAKOL-MILEMALA/packageradar-smart-refresh/main/%D7%A8%D7%A2%D7%A0%D7%95%D7%9F-%D7%97%D7%9B%D7%9D.user.js
+// @updateURL    https://github.com/HAKOL-MILEMALA/packageradar-smart-refresh/raw/refs/heads/main/%D7%A8%D7%A2%D7%A0%D7%95%D7%9F-%D7%97%D7%9B%D7%9D.user.js
+// @downloadURL  https://github.com/HAKOL-MILEMALA/packageradar-smart-refresh/raw/refs/heads/main/%D7%A8%D7%A2%D7%A0%D7%95%D7%9F-%D7%97%D7%9B%D7%9D.user.js
 // @grant        none
 // ==/UserScript==
+
 (function() {
     'use strict';
 
