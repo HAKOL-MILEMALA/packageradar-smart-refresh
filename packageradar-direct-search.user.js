@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         PackageRadar - חיפוש ישיר
-// @namespace    https://github.com/HAKOL-MILEMALA/
+// @namespace    http://tampermonkey.net/
 // @version      2.4
 // @description  דילוג אוטומטי על חלונית התשלום, ללא הפרעה לאתר ולתרגום גוגל
 // @author       HAKOL-MILEMALA
